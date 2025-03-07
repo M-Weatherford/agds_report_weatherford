@@ -233,3 +233,24 @@ write_rds(
   daily_fluxes_allsites_nested_joined,
   file = "data/daily_fluxes_allsites_nested_joined.rds"
 )
+
+
+half_hourly_vpd_fluxes <- read_csv("Data/FLX_CH-Lae_FLUXNET2015_FULLSET_HH_2004-2006.csv")
+
+half_hourly_vpd_fluxes <- select(
+  half_hourly_vpd_fluxes,
+  starts_with("TIMESTAMP"),
+  starts_with("VPD_F"),
+  ends_with("_F"),
+  -contains("JSB"),
+  NIGHT
+)
+
+half_hourly_vpd_fluxes <- half_hourly_vpd_fluxes %>%
+  mutate( TIMESTAMP_START = ymd_hm(TIMESTAMP_START),TIMESTAMP_END = ymd_hm(TIMESTAMP_END))%>%
+  rename(ts_start = TIMESTAMP_START, ts_end = TIMESTAMP_END)
+
+daily_vpd_fluxes <- half_hourly_vpd_fluxes %>%  
+  mutate(date = as_date(ts_start)) %>%  # converts the ymd_hm-formatted date-time object to a date-only object (ymd)
+  group_by(date) %>% 
+  summarise(VPD_F = mean(VPD_F))
