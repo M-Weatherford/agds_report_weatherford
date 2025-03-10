@@ -41,7 +41,7 @@ knitr::kable(soilcarbonSummary)
 
 **What are the data that you are looking at?**
 
-The data that I am looking at is a collection of experiments that looked at the soil carbon contents measured in g C/m\^2. From this I calculated the Log response rate for each site and then averaged those response rate based on the length (in years) of the experiment (\<3 early, 3-6 mid, \>6 late).
+The data that I am looking at is a collection of experiments that looked at the soil carbon contents measured in g C/m\^2 at both ambient and elevated CO2 levels. From this I calculated the Log response rate for each site and then averaged those response rate based on the length (in years) of the experiment (\<3 early, 3-6 mid, \>6 late).
 
 **What do you expect your analysis to show, what is your hypothesis?**
 
