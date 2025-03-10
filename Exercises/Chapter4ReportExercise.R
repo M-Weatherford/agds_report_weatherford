@@ -18,5 +18,6 @@ soilcarbonSummary <- soilcarbon %>%
   group_by(Phase) %>%
   summarise(mean_ambient_CO2=mean(mean_ambient_CO2),
             mean_elevated_CO2=mean(mean_increased_CO2),
-            mean_log_response = mean(log_response))
+            mean_log_response = mean(log_response))%>%
+  arrange(mean_elevated_CO2)
   
