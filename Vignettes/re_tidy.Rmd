@@ -7,7 +7,6 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-
 ```{r loading in data, include=FALSE}
 library(dplyr)
 library(lubridate)
@@ -31,7 +30,8 @@ soilcarbonSummary <- soilcarbon %>%
   group_by(Phase) %>%
   summarise(mean_ambient_CO2=mean(mean_ambient_CO2),
             mean_elevated_CO2=mean(mean_increased_CO2),
-            mean_log_response = mean(log_response))
+            mean_log_response = mean(log_response))%>%
+  arrange(mean_elevated_CO2)
   
 ```
 
@@ -39,14 +39,18 @@ soilcarbonSummary <- soilcarbon %>%
 knitr::kable(soilcarbonSummary)
 ```
 
+**What are the data that you are looking at?**
 
+The data that I am looking at is a collection of experiments that looked at the soil carbon contents measured in g C/m\^2. From this I calculated the Log response rate for each site and then averaged those response rate based on the length (in years) of the experiment (\<3 early, 3-6 mid, \>6 late).
 
-What are the data that you are looking at?
+**What do you expect your analysis to show, what is your hypothesis?**
 
-What do you expect your analysis to show, what is your hypothesis? 
+I expect this analysis to show a difference response to elevated CO2 during different time periods, my hypothesis would be that during the early stages there is a greater response and then after extend time the ecosystem begins to adapt to the new level of CO2 and the response is less prevalent.
 
-How should soil organic matter content change under elevated CO2?
+**How should soil organic matter content change under elevated CO2?**
 
-Interpret your results after aggregating the data: What do your final numbers mean? Do they support your initial hypothesis? Why so, why not?
+Given the CO2 fertilization hypothesis it is assumed that soil organic matter would also increase as the increased plant growth would also lead to more carbon storage in the soil. The paper (Groenigen et al., 2014) states however that the consumption of soil organic matter may also increase under elevated CO2. This would mean that overall storage would not increase but simply the overturning of soil organic carbon will increase under elevated CO2.
 
-Tip: Skim the paper and its references to better understand the data and processes you are looking at!``
+**Interpret your results after aggregating the data: What do your final numbers mean? Do they support your initial hypothesis? Why so, why not?**
+
+My final numbers show that the peak response to elevated CO2 occurs between 3-6 years and then there is a negative response after 6 years. This is similar to my hypothesis in that there is less of a response in the longer term phases however it differs from my initial hypothesis as I would've predicted that the early phase of less than 3 years would've been the phase with the highest response rate and then a decline in the 3-6 year phase. I was also surprised by the fact that the negative (late phase) response is double the magnitude of the mid phase response, -0.03 and 0.017 respectively.
