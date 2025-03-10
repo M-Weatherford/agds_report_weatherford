@@ -1,0 +1,52 @@
+---
+title: "re_tidy"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r loading in data, include=FALSE}
+library(dplyr)
+library(lubridate)
+library(tidyr)
+library(readr)
+library(stringr)
+library(purrr)
+
+setwd("/Users/michaelweatherford/Library/Mobile Documents/com~apple~CloudDocs/School Work/Grad School/Year 1/Spring Semester/AGDS 1/AGDS")
+
+soilcarbon<-read_csv("./Data/SoilCarbonData_CLEANED.csv")
+
+soilcarbon$log_response <- log(soilcarbon$mean_increased_CO2/soilcarbon$mean_ambient_CO2)
+
+soilcarbon <- soilcarbon %>%
+  mutate(Phase = case_when(Time_years < 3 ~ "early",
+                           Time_years >=3 & Time_years <=6 ~ "mid",
+                           Time_years > 6 ~ "late"))
+
+soilcarbonSummary <- soilcarbon %>%
+  group_by(Phase) %>%
+  summarise(mean_ambient_CO2=mean(mean_ambient_CO2),
+            mean_elevated_CO2=mean(mean_increased_CO2),
+            mean_log_response = mean(log_response))
+  
+```
+
+```{r showing table, echo=TRUE}
+knitr::kable(soilcarbonSummary)
+```
+
+
+
+What are the data that you are looking at?
+
+What do you expect your analysis to show, what is your hypothesis? 
+
+How should soil organic matter content change under elevated CO2?
+
+Interpret your results after aggregating the data: What do your final numbers mean? Do they support your initial hypothesis? Why so, why not?
+
+Tip: Skim the paper and its references to better understand the data and processes you are looking at!``
