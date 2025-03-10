@@ -1,6 +1,7 @@
 ---
 title: "re_tidy"
 output: html_document
+self_contained: no
 ---
 
 ```{r setup, include = FALSE}
