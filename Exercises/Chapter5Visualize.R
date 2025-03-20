@@ -324,16 +324,4 @@ ggplot(
   scale_y_continuous(expand = c(0, 0))
 
 plotme
-ggsave("./figures/plot_gpp.pdf")
-
-
-half_hourly_fluxes_duped <- half_hourly_fluxes
-half_hourly_fluxes_duped$is_duped <- duplicated(half_hourly_fluxes$GPP_NT_VUT_REF)
-
-daily_fluxes_duped <- half_hourly_fluxes_duped %>%
-  mutate(year = year(ts_start),
-         month = month(ts_start),
-         doy = yday(ts_start))%>%
-  group_by(doy)%>%
-  summarise(GPP_NT_VUT_REF = mean(GPP_NT_VUT_REF), 
-            spur_perc = prop(is_duped))
+ggsave("./figure
