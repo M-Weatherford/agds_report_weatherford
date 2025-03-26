@@ -1,0 +1,100 @@
+---
+title: "Air Quality in NYC"
+author: "Michael Weatherford"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+As one of the most densely populated areas of the planet New York city represents an interesting opportunity to study how highly develop urbanization effects environmental variables. One such variable that is vital for human health is air quality/ The data set used for this is comprised of several months of air quality measurements for Roosevelt Island across the summer months of May through the end of September 1973. This data was obtained from R in the base Dataset package, the units are listed on the figures. This report looks to understand what drives ozone concentration the most. My hypothesis is that solar radiation will be the biggest predictor of ozone concentration as it is required to stimulate the reaction that generates ozone at the ground level.
+
+```{r air, include=FALSE}
+library(ggplot2)
+library(readr)
+library(lubridate)
+library(dplyr)
+library(checkthat)
+library(ggpmisc)
+
+air<-datasets::airquality
+
+#dataset is air quality measurements from New York
+
+air$Date<-as.Date(with(air,paste(Month,Day,sep="-")),"%m-%d")
+
+air$doy <- yday(air$Date)
+
+air <- air %>%
+  select(Ozone,
+         Solar.R,
+         Wind,
+         Temp,
+         doy)
+stats <- boxplot.stats(air$Ozone, coef = 1.5, do.conf = FALSE)
+
+outliers <- stats$out
+
+air$is_outlier <- colSums(sapply(air$Ozone, "%in%", x = outliers)) > 0
+
+cols <- c("TRUE" = "red", "FALSE" = "blue")
+```
+
+```{r doy, echo=FALSE}
+
+ggplot(air, aes(x=doy,y=Ozone
+))+
+  geom_point(aes(color = is_outlier))+
+  theme_classic()+
+  scale_color_manual(values = cols)+
+  labs(x = "Day of The Year", y = "Ozone (ppb)")+
+  geom_smooth(formula = y ~ x, method = "lm", color = "black", se = FALSE)+
+  stat_poly_eq(use_label(c("eq", "R2")))
+
+```
+
+The above figure is showing the relationship (or lack there of) between time of the year and ozone concentration. While there is a slight rise during the late summer it is hard to associate this with a seasonality effect. However this data is disappointing in the fact that we only have one real season covered with summer it would be much more interesting to see how the ozone concentration changes over the winter months.
+
+```{r solar, echo=FALSE}
+ggplot(air, aes(x=Solar.R,y=Ozone
+))+
+  geom_point(aes(color = is_outlier))+
+  theme_classic()+
+  geom_smooth(formula = y ~ x, method = "lm", color = "black", se = FALSE)+
+  scale_color_manual(values = cols)+
+  stat_poly_eq(use_label(c("eq", "R2")))+
+  labs(x = "Solar Radiation (lang)", y = "Ozone (ppb)")
+```
+
+This figure is looking at ozone and solar radiation, lang refers to solar radiation in Langleys. In this graph it can be seen that there is a slight positive relationship between higher solar radiation and higher ozone concentrations this would make some natural sense as solar radiation does play an important role in the formation of Ozone in the upper atmosphere. Upon further research is does appear however that ground based ozone is also produced by reactions stimulated by solar radiation but I would expect a stronger trend as temperature has a higher R squared value than solar radiation.
+
+```{r wind, echo=FALSE}
+ggplot(air, aes(x=Wind,y=Ozone
+))+
+  geom_point(aes(color = is_outlier))+
+  theme_classic()+
+  geom_smooth(formula = y ~ x, method = "lm", color = "black", se = FALSE)+
+  scale_color_manual(values = cols)+
+  stat_poly_eq(use_label(c("eq", "R2")))+
+  labs(x = "Wind (mph)", y = "Ozone (ppb)")
+```
+
+This figure looks at wind and ozone and shows a pretty consistent negative relationship. This makes a lot of logical sense as if the ozone is being produced at ground level in the city if there is no wind it is likely to settle and stay there but on days with high wind it will get blown out of the city and mixed with the surrounding air.
+
+```{r temp, echo=FALSE}
+ggplot(air, aes(x=Temp,y=Ozone
+))+
+  geom_point(aes(color = is_outlier))+
+  theme_classic()+
+  geom_smooth(formula = y ~ x, method = "lm", color = "black", se = FALSE)+
+  scale_color_manual(values = cols)+
+  stat_poly_eq(use_label(c("eq", "R2")))+
+  labs(x = "Temp. (F)", y = "Ozone (ppb)")
+```
+
+This figure is looking at temperature and ozone. This figure has the highest R squared of any of the graphs shown and shows that higher temperatures strongly correlate with higher ozone concentrations. It is interesting that temperature correlates stronger than solar radiation and seemingly solar radiation is a bigger driver of ozone production however temperature could be showing a correlation between wind and solar radiation as the hottest days are most likely days with high solar radiation and low winds leading to the highest ozone values.
+
+Overall my hypothesis was partially true however I did not expect temperature to be the biggest predictor by such a wide margin especially as there is less of a causal link between the two, at least from the research I preformed.

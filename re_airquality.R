@@ -3,6 +3,7 @@ library(readr)
 library(lubridate)
 library(dplyr)
 library(checkthat)
+library(ggpmisc)
 
 air<-datasets::airquality
 
@@ -18,23 +19,33 @@ air <- air %>%
          Wind,
          Temp,
          doy)
+stats <- boxplot.stats(air$Ozone, coef = 1.5, do.conf = FALSE)
 
+outliers <- stats$out
+
+air$is_outlier <- colSums(sapply(air$Ozone, "%in%", x = outliers)) > 0
+
+cols <- c("TRUE" = "red", "FALSE" = "blue")
 
 ggplot(air, aes(x=doy,y=Ozone
 ))+
-  geom_point()+
+  geom_point(aes(color = is_outlier))+
   theme_classic()+
-  geom_smooth(formula = y ~ x, method = "lm", color = "red", se = FALSE)
+  scale_color_manual(values = cols)
 
 ggplot(air, aes(x=Solar.R,y=Ozone
 ))+
-  geom_point()+
+  geom_point(aes(color = is_outlier))+
   theme_classic()+
-  geom_smooth(formula = y ~ x, method = "lm", color = "red", se = FALSE)
+  geom_smooth(formula = y ~ x, method = "lm", color = "black", se = FALSE)+
+  scale_color_manual(values = cols)+
+  stat_poly_eq(use_label(c("eq", "R2")))
 
 ggplot(air, aes(x=Wind,y=Ozone
 ))+
-  geom_point()+
+  geom_point(aes(color = is_outlier))+
   theme_classic()+
-  geom_smooth(formula = y ~ x, method = "lm", color = "red", se = FALSE)
+  geom_smooth(formula = y ~ x, method = "lm", color = "black", se = FALSE)+
+  scale_color_manual(values = cols)+
+  stat_poly_eq(use_label(c("eq", "R2")))
 
