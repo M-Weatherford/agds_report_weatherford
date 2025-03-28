@@ -36,16 +36,4 @@ ggplot(air, aes(x=doy,y=Ozone
 ggplot(air, aes(x=Solar.R,y=Ozone
 ))+
   geom_point(aes(color = is_outlier))+
-  theme_classic()+
-  geom_smooth(formula = y ~ x, method = "lm", color = "black", se = FALSE)+
-  scale_color_manual(values = cols)+
-  stat_poly_eq(use_label(c("eq", "R2")))
-
-ggplot(air, aes(x=Wind,y=Ozone
-))+
-  geom_point(aes(color = is_outlier))+
-  theme_classic()+
-  geom_smooth(formula = y ~ x, method = "lm", color = "black", se = FALSE)+
-  scale_color_manual(values = cols)+
-  stat_poly_eq(use_label(c("eq", "R2")))
-
+  theme_c
