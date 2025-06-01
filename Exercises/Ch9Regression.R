@@ -301,6 +301,6 @@ mosaicplot(conf_matrix$table,
            main = "Confusion matrix")
 
 
-
+data <- readr::read_csv("./data/FLX_CH-Lae_FLUXNET2015_FULLSET_HH_2004-2006_CLEAN.csv")
 
 
