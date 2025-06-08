@@ -16,7 +16,6 @@ library(readr)
 library(stringr)
 library(purrr)
 
-setwd("/Users/michaelweatherford/Library/Mobile Documents/com~apple~CloudDocs/School Work/Grad School/Year 1/Spring Semester/AGDS 1/AGDS")
 
 soilcarbon<-read_csv("./Data/SoilCarbonData_CLEANED.csv")
 

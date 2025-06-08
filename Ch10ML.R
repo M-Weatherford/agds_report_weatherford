@@ -190,6 +190,9 @@ daily_fluxes_baked |>
 recipes::recipe(WS_F ~ ., data = daily_fluxes) |>
   recipes::step_YeoJohnson(all_outcomes())
 
+#--------------------------------------------------------
+
+
 # Data cleaning: looks ok, no obviously bad data
 # no long tail, therefore no further target engineering
 daily_fluxes |> 
