@@ -1,0 +1,189 @@
+---
+title: "Supervised Machine Learning II"
+author: "Michael Weatherford"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 1. How do Davos and Laegern differ?
+
+Davos is at a much higher elevation at 1,639 m while Laegern is at 689 m. Davos is also located in the Alps while Laegern is on the plateau. This also affects the vegetation as Davos will have much more alpine vegetation while also being much closer to the treeline while Laegern is more likely to have full forests. They also differ on a human impact level as Laegern is much closer to major cities and therefore may have more human impact that Davos located in the mountains.
+
+## 2 + 3. Train three KNN-models on each dataset: Davos only, Laegern only, both together. For each model: Use 80% of the data to train a KNN-model with an optimal k and set aside the remaining 20% for testing.
+
+```{r setting up models, echo=FALSE, message=FALSE, warning=FALSE}
+# Load required libraries
+library(tidyverse)
+library(lubridate)
+library(caret)
+library(recipes)
+library(rsample)
+library(yardstick)
+library(cowplot)
+library(tidyr)
+library(dplyr)
+library(knitr)
+
+# Preprocessing function to apply same logic to both sites
+process_flux_data <- function(filepath, site) {
+  df <- read_csv(filepath) |>  
+    select(TIMESTAMP,
+           GPP_NT_VUT_REF,    
+           ends_with("_QC"),  
+           ends_with("_F"),   
+           -contains("JSB")) |>
+    mutate(TIMESTAMP = lubridate::ymd(TIMESTAMP)) |>
+    mutate(across(where(is.numeric), ~na_if(., -9999))) |>
+    mutate(GPP_NT_VUT_REF = ifelse(NEE_VUT_REF_QC < 0.8, NA, GPP_NT_VUT_REF),
+           TA_F           = ifelse(TA_F_QC        < 0.8, NA, TA_F),
+           SW_IN_F        = ifelse(SW_IN_F_QC     < 0.8, NA, SW_IN_F),
+           LW_IN_F        = ifelse(LW_IN_F_QC     < 0.8, NA, LW_IN_F),
+           VPD_F          = ifelse(VPD_F_QC       < 0.8, NA, VPD_F),
+           PA_F           = ifelse(PA_F_QC        < 0.8, NA, PA_F),
+           P_F            = ifelse(P_F_QC         < 0.8, NA, P_F),
+           WS_F           = ifelse(WS_F_QC        < 0.8, NA, WS_F)) |>
+    select(-ends_with("_QC")) |>
+    select(-"P_F")
+  
+  return(df)
+}
+
+# Load and process data
+davos <- process_flux_data("./Data/FLX_CH-Dav_FLUXNET2015_FULLSET_DD_1997-2014_1-3.csv", "Davos")
+laegern <- process_flux_data("./Data/FLX_CH-Lae_FLUXNET2015_FULLSET_DD_2004-2014_1-4.csv", "Laegern")
+
+# Split data
+set.seed(42)
+split_dav <- initial_split(davos, prop = 0.8, strata = "VPD_F")
+train_dav <- training(split_dav)
+test_dav  <- testing(split_dav)
+
+split_lae <- initial_split(laegern, prop = 0.8, strata = "VPD_F")
+train_lae <- training(split_lae)
+test_lae  <- testing(split_lae)
+
+train_combined <- bind_rows(train_dav, train_lae)
+test_combined  <- bind_rows(test_dav, test_lae)
+
+# Preprocessing recipe
+pp_recipe <- function(data) {
+  recipe(GPP_NT_VUT_REF ~ SW_IN_F + VPD_F + TA_F, data = data |> drop_na()) |>
+    step_BoxCox(all_predictors()) |>
+    step_center(all_numeric(), -all_outcomes()) |>
+    step_scale(all_numeric(), -all_outcomes())
+}
+
+# Train KNN models
+train_knn_model <- function(data, k_values = 1:50) {
+  clean_data <- data |> drop_na(GPP_NT_VUT_REF, SW_IN_F, VPD_F, TA_F)
+
+  if (nrow(clean_data) < 10) {
+    warning("Not enough rows after filtering. Model training skipped.")
+    return(NULL)
+  }
+
+  caret::train(
+    pp_recipe(clean_data),
+    data = clean_data,
+    method = "knn",
+    trControl = caret::trainControl(method = "cv", number = 5),  # 5-fold CV
+    tuneGrid = expand.grid(k = k_values),
+    metric = "RMSE"
+  )
+}
+
+mod_dav <- train_knn_model(train_dav)
+mod_lae <- train_knn_model(train_lae)
+mod_comb <- train_knn_model(train_combined)
+
+# Evaluation function (simplified metrics table version)
+eval_model_simple <- function(mod, df_test) {
+  df <- df_test |> drop_na()
+  df$fitted <- predict(mod, newdata = df)
+  metrics(df, truth = GPP_NT_VUT_REF, estimate = fitted)
+}
+
+# Collect evaluation metrics
+results <- tibble(
+  model = c("Davos", "Laegern", "Combined"),
+  test_on_dav = list(eval_model_simple(mod_dav, test_dav),
+                     eval_model_simple(mod_lae, test_dav),
+                     eval_model_simple(mod_comb, test_dav)),
+  test_on_lae = list(eval_model_simple(mod_dav, test_lae),
+                     eval_model_simple(mod_lae, test_lae),
+                     eval_model_simple(mod_comb, test_lae)),
+  test_on_combined = list(eval_model_simple(mod_dav, test_combined),
+                          eval_model_simple(mod_lae, test_combined),
+                          eval_model_simple(mod_comb, test_combined))
+)
+
+# clean results
+results_clean <- results |> 
+  mutate(
+    test_on_dav = map(test_on_dav, ~ .x |> select(-.estimator) |> 
+                        pivot_wider(names_from = .metric, values_from = .estimate, names_prefix = "dav_")),
+    test_on_lae = map(test_on_lae, ~ .x |> select(-.estimator) |> 
+                        pivot_wider(names_from = .metric, values_from = .estimate, names_prefix = "lae_")),
+    test_on_combined = map(test_on_combined, ~ .x |> select(-.estimator) |> 
+                             pivot_wider(names_from = .metric, values_from = .estimate, names_prefix = "comb_"))
+  ) |> 
+  unnest(cols = c(test_on_dav, test_on_lae, test_on_combined))
+
+
+
+# Round values for nicer presentation
+results_clean_pretty <- results_clean |>
+  mutate(across(ends_with("rmse"), ~ round(., 2)),
+         across(ends_with("rsq"),  ~ round(., 3)))
+
+# Prepare a helper function to reshape one model's results for printing
+reshape_metrics <- function(df, model_name) {
+  df %>%
+    filter(model == model_name) %>%
+    select(starts_with("dav_"), starts_with("lae_"), starts_with("comb_")) %>%
+    # gather metrics by site
+    pivot_longer(cols = everything(),
+                 names_to = c("site", ".value"),
+                 names_pattern = "(dav|lae|comb)_(.*)") %>%
+    # rename sites nicely
+    mutate(site = recode(site,
+                         dav = "Davos",
+                         lae = "Laegern",
+                         comb = "Combined")) %>%
+    select(site, rmse, rsq) %>%
+    arrange(site)
+}
+
+# Apply to each model:
+dav_metrics <- reshape_metrics(results_clean_pretty, "Davos")
+lae_metrics <- reshape_metrics(results_clean_pretty, "Laegern")
+comb_metrics <- reshape_metrics(results_clean_pretty, "Combined")
+
+# Print tables in R Markdown chunk
+cat("### Model trained on Davos\n")
+knitr::kable(dav_metrics, col.names = c("Test Site", "RMSE", "R²"))
+
+cat("\n\n### Model trained on Laegern\n")
+knitr::kable(lae_metrics, col.names = c("Test Site", "RMSE", "R²"))
+
+cat("\n\n### Model trained on Davos + Laegern (Combined)\n")
+knitr::kable(comb_metrics, col.names = c("Test Site", "RMSE", "R²"))
+
+
+```
+
+# 4. Interpretation
+
+One pattern I see in the table is that there in almost all the cases the lowest value for any metric is on the site the data was trained on this makes sense as it would be more fitted for that data set. Another pattern I noticed for the non-combined models is that the combined values was usually in between the original site and the one that the model wasn't trained on.
+
+The models perform okay but not great across single sites this is because of the natural difference for each site and the fact that they have different vegetation.
+
+The model trained on both sets does fairly well but I do notice that it is much closer to Davos than to Laegern this could be a data issue that Davos is over represented. Which now looking back at the data does seem to be the case that there is just more data for Davos.
+
+While this somewhat an out of sample set up I don't believe it to be 100% since both sites are on mountains in Switzerland. I believe that if the model were to be applied to a site from Spain it would be much farther apart than the models seen here.

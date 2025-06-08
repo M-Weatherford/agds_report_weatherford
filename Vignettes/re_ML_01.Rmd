@@ -308,7 +308,7 @@ get_knn_mae_by_k <- function(daily_fluxes, k_values = 1:40, seed = 1216) {
   return(results)
 }
 
-mae_results <- get_knn_mae_by_k(daily_fluxes, k_values = 1:50)
+mae_results <- get_knn_mae_by_k(daily_fluxes, k_values = 1:100)
 
 # 5. Plot the results
 mae_results |> 
@@ -326,7 +326,7 @@ mae_results |>
   theme_classic()
 ```
 
-Wherever the training and testing MAE are far apart represents a region of overfitting as the data matches the training too much. Where the test data has a lower mae than the training data may represent a region of underfitting as the model is too general.
+Wherever the training and testing MAE are far apart represents a region of overfitting as the data matches the training too much. Where the test data has a lower MAE than the training data may represent a region of underfitting as the model is too general as k approaches the total number of data points it just becomes an average of all the points. Thus making sure K isn't close to N can help
 
 ## 3. Is there an “optimal”  in terms of model generalisability? Edit your code to determine an optimal k.
 
